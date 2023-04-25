@@ -9,6 +9,7 @@ class VMTranslator
     # If path is a .vm file, create a CodeWriter instance and call create_output on it
     code_writer = CodeWriter.new(path)
     code_writer.create_output
+=begin
   else
     # If path is not a .vm file, assume it is a directory and search for .vm files in it
     vm_files = Dir.glob(File.join(path, "*.vm"))
@@ -19,6 +20,7 @@ class VMTranslator
         code_writer = CodeWriter.new(vm_file)
         code_writer.create_output
       end
-    end
+=end
+    #end
   end
 end
