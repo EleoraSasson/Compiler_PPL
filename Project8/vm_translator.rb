@@ -1,12 +1,17 @@
 # frozen_string_literal: true
 
+require_relative 'code_writer'
 class VMTranslator
 
   puts("Enter the path to a vm file, or to a directory containing vm files")
   path = gets.chomp
 
-  if path.end_with?(".vm")
-    # If path is a .vm file, create a CodeWriter instance and call create_output on it
+  #if the path ends by .vm, then create a instance of codewriter and call create_output
+  #if path.end_with?(".vm")
+  code_writer = CodeWriter.new(path)
+  code_writer.create_output
+=begin
+  elsif path.end_with?(".vm")
     code_writer = CodeWriter.new(path)
     code_writer.create_output
 =begin
@@ -22,5 +27,5 @@ class VMTranslator
       end
 =end
     #end
-  end
+  #end
 end
