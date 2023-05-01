@@ -90,7 +90,7 @@ class Parser
     elsif @command.include?('label')
       # label symbol
       return @command.split('label')[1]
-    elsif @command.include?('if')
+    elsif @command.include?('if_goto')
       return @command.split('if_goto')[1]
     elsif @command.include?('goto')
       return @command.split('goto')[1]

@@ -7,10 +7,10 @@ class VMTranslator
   #original_path = gets.chomp
   #path = original_path.gsub("\\", "/")
   # path = "C:\\Users\\eleor\\OneDrive\\Bureau\\Year 4\\Semester 2\\Fundamentals\\Homework 1\\Project7_lab1\\StackArithmetic\\StackTest\\StackTest.vm"
-  #path = "C:\\Users\\meira\\OneDrive\\Desktop\\PPL\\nand2tetris\\projects\\08\\ProgramFlow\\BasicLoop"
+  path = "C:/Users/meira/OneDrive/Desktop/PPL/nand2tetris/projects/08/ProgramFlow/BasicLoop/BasicLoop.vm"
   #if the path ends by .vm, then create a instance of codewriter and call create_output
   #if path.end_with?(".vm")
-  path = "C:/Users/eleor/OneDrive/Bureau/Year 4/Semester 2/Fundamentals/nand2tetris/nand2tetris/projects/08/ProgramFlow/BasicLoop/BasicLoop.vm"
+  #path = "C:/Users/eleor/OneDrive/Bureau/Year 4/Semester 2/Fundamentals/nand2tetris/nand2tetris/projects/08/ProgramFlow/BasicLoop/BasicLoop.vm"
   code_writer = CodeWriter.new(path)
   code_writer.create_output
 =begin
