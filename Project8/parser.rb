@@ -60,7 +60,7 @@ class Parser
       return C_LABEL
     elsif @command.include?('if')
       return C_IF
-    elsif @command.include('goto')
+    elsif @command.include?('goto')
       return C_GOTO
     else
       raise "Unrecognized command type"
