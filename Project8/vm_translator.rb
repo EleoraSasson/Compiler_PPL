@@ -5,7 +5,8 @@ class VMTranslator
 
   puts("Enter the path to a vm file, or to a directory containing vm files")
   path = gets.chomp
-  path = "C:/Users/eleor/OneDrive/Bureau/Year 4/Semester 2/Fundamentals/nand2tetris/nand2tetris/projects/08/ProgramFlow/BasicLoop/BasicLoop.vm"
+  # path = "C:\\Users\\eleor\\OneDrive\\Bureau\\Year 4\\Semester 2\\Fundamentals\\Homework 1\\Project7_lab1\\StackArithmetic\\StackTest\\StackTest.vm"
+  path = "C:\\Users\\meira\\OneDrive\\Desktop\\PPL\\nand2tetris\\projects\\08\\ProgramFlow\\BasicLoop"
   #if the path ends by .vm, then create a instance of codewriter and call create_output
   #if path.end_with?(".vm")
   code_writer = CodeWriter.new(path)

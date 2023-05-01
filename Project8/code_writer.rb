@@ -13,6 +13,7 @@ class CodeWriter
   end
 
   def write_label
+=begin
     @file.write("// label \n")
     begin
       func_name = @function_list[-1] + "$"
@@ -22,10 +23,14 @@ class CodeWriter
     label_name_input = @parser.arg1
     label_name = func_name + label_name_input
       @file.write("(%s)\n" % label_name)
+=end
+    #make sure there's proper brackets in the string
+    @file.write("(%s)\n" % @parser.arg1)
   end
 
   def write_goto
-    @file.write("// goto\n")
+=begin
+     @file.write("// goto\n")
     begin
       func_name = @function_list[-1] + "$"
     rescue
@@ -35,9 +40,15 @@ class CodeWriter
     label_name = func_name + label_name_input
     @file.write("(%s)\n" % label_name)
     @file.write("0;JMP\n")
+=end
+    #check about brackets
+    @file.write("@")
+    @file.write("%s\n" % @parser.arg1)
+    @file.write("0;JMP\n")
   end
 
   def write_if_goto
+=begin
     @file.write("// if-goto\n")
     func_name = @function_list.empty? ? '' : @function_list[-1] + "$"
     label_name_input = @parser.arg1
@@ -48,6 +59,14 @@ class CodeWriter
     @file.write("@SP\n")    # adjust stack top
     @file.write("M=M-1\n")
     @file.write("@%s\n" % label_name)
+    @file.write("D;JNE\n")
+=end
+    # outPrinter.print(arithmeticTemplate1() + "@" + label +"\nD;JNE\n");
+    @file.write("@SP\n")
+    @file.write("AM=M-1\n")
+    @file.write("D=M\n")
+    @file.write("A=A-1\n")
+    @file.write("@%s\n" % @parser.arg1)
     @file.write("D;JNE\n")
   end
 
