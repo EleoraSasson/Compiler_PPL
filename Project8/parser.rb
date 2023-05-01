@@ -56,6 +56,12 @@ class Parser
       return C_LABEL
     elsif @command.include?('push')
       return C_GOTO
+    elsif @command.include?('label')
+      return C_LABEL
+    elsif @command.include?('if')
+      return C_IF
+    elsif @command.include('goto')
+      return C_GOTO
     else
       raise "Unrecognized command type"
     end
@@ -81,6 +87,13 @@ class Parser
           return s[0...ind]
         end
       end
+    elsif @command.include?('label')
+      # label symbol
+      return @command.split('label')[1]
+    elsif @command.include?('if')
+      return @command.split('if_goto')[1]
+    elsif @command.include?('goto')
+      return @command.split('goto')[1]
     else
       raise "Unrecognized command type when trying to obtain arg1"
     end

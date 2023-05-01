@@ -1,10 +1,71 @@
+require_relative 'parser'
 class CodeWriter
-  #sets the ouput asm file
+  #sets the output asm file
   def initialize(path)
     @parser = Parser.new(path)
     @filename = "#{File.dirname(path)}/#{File.basename(path, ".vm")}.asm"
     @file = File.open(@filename, 'w')
     @static_var = File.basename(File.dirname(path)) # useful in declaring static variables
+    @function_list = []
+  end
+
+  def write_label
+    @file.write("// label \n")
+    begin
+      func_name = @function_list[-1] + "$"
+    rescue
+      func_name = ''
+    end
+    label_name_input = @parser.arg1()
+    label_name = func_name + label_name_input
+      @file.write("(%s)\n" % label_name)
+  end
+
+  def write_goto
+    @file.write("// goto\n")
+    begin
+      func_name = @function_list[-1] + "$"
+    rescue
+      func_name = ''
+    end
+    label_name_input = @parser.arg1()
+    label_name = func_name + label_name_input
+    @file.write("(%s)\n" % label_name)
+    @file.write("0;JMP\n")
+  end
+
+=begin
+  def write_if_goto
+    @file.write("// if-goto\n")
+    begin
+      func_name = @function_list[-1] + "$"
+    rescue
+      func_name = ''
+    end
+    label_name_input = @parser.arg1()
+    label_name = func_name + label_name_input
+    @file.write("@SP\n")
+    @file.write("A=M-1\n")
+    @file.write("D=M\n")
+    @file.write("@SP\n")    # adjust stack top
+    @file.write("M=M-1\n")
+    @file.write("@%s\n" % label_name)
+    @file.write("D;JNE\n")
+  end
+=end
+
+  def write_if_goto
+    @file.write("// if-goto\n")
+    func_name = @function_list.empty? ? '' : @function_list[-1] + "$"
+    label_name_input = @parser.arg1()
+    label_name = func_name + label_name_input
+    @file.write("@SP\n")
+    @file.write("A=M-1\n")
+    @file.write("D=M\n")
+    @file.write("@SP\n")    # adjust stack top
+    @file.write("M=M-1\n")
+    @file.write("@%s\n" % label_name)
+    @file.write("D;JNE\n")
   end
 
   #sets arg1 and arg2, and translates into asm commands accordingly
@@ -242,9 +303,15 @@ class CodeWriter
         writePushPop
       elsif c_type == 'C_ARITHMETIC'
         writeArithmetic
-        #close file
+      elsif c_type == 'C_IF'
+        write_if_goto
+      elsif c_type == 'C_GOTO'
+        write_goto
+      elsif c_type == 'C_LABEL'
+        write_label
       end
     end
     @file.close
   end
-end
+  end
+
