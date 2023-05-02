@@ -62,6 +62,12 @@ class Parser
       return C_IF
     elsif @command.include?('goto')
       return C_GOTO
+    elsif @command.include?('function')
+      return C_FUNCTION
+    elsif @command.include?('call')
+      return C_CALL
+    elsif @command.include?('return')
+      return C_RETURN
     else
       raise "Unrecognized command type"
     end
@@ -94,6 +100,12 @@ class Parser
       return @command.split('if_goto')[1]
     elsif @command.include?('goto')
       return @command.split('goto')[1]
+    elsif @command.include?('function')
+      return @command.split('function')[1].gsub(/\d+$/, '')
+    elsif @command.include?('call')
+      return @command.split('call')[1]
+    elsif @command.include?('return')
+      return @command.split('return')[1]
     else
       raise "Unrecognized command type when trying to obtain arg1"
     end

@@ -6,12 +6,12 @@ class CodeWriter
 
   #sets the output asm file
   def initialize(path)
-    write_init
     @parser = Parser.new(path)
     @filename = "#{File.dirname(path)}/#{File.basename(path, ".vm")}.asm"
     @file = File.open(@filename, 'w')
     @static_var = File.basename(File.dirname(path)) # useful in declaring static variables
     @function_list = []
+    write_init
   end
 
   def write_label
@@ -36,13 +36,14 @@ class CodeWriter
   end
 
   def write_call( func_name, num_args)
-    String new_label = "RETURN_LABEL" + (@@label_count+=1)
+    String new_label = "RETURN_LABEL" + (@@label_count).to_s
+    @@label_count += 1
     #@file.write("@RETURN_LABEL" + @@label_count+=1 +"\n")
     @file.write("@" + new_label + "\n")
     @file.write("D=A\n")
     @file.write("@SP\n")
-    @file.write("A+M\n")
-    @file.write("M+D\n")
+    @file.write("A=M\n")
+    @file.write("M=D\n")
     @file.write("@SP\n")
     @file.write("M=M+1\n")
     @file.write(pushTemplate("LCL", 0 ,true))
@@ -51,13 +52,12 @@ class CodeWriter
     @file.write(pushTemplate("THAT",0,true))
 
     @file.write("@SP\n")
-    @file.write("D+M\n")
+    @file.write("D=M\n")
     @file.write("@5\n")
     @file.write("D=D-A\n")
-    @file.write("@" + num_args + "\n")
+    @file.write("@" + num_args.to_s + "\n")
     @file.write("D=D-A\n")
     @file.write("@ARG\n")
-    @file.write("M=D\n")
     @file.write("M=D\n")
     @file.write("@SP\n")
     @file.write("D=M\n")
@@ -126,9 +126,9 @@ class CodeWriter
   def write_function
     @file.write("(" + @parser.arg1 + ")\n")
     # for-loop for i in @parser.arg2
-    range 0..@parser.arg2.each { |i|
+    for i in 0..@parser.arg2.to_i-1
       @file.write("@0\n" + "D=A\n" + "@SP\n" + "A=M\n" + "M=D\n" + "@SP\n" + "M=M+1\n")
-    }
+    end
   end
 
   #sets arg1 and arg2, and translates into asm commands accordingly
@@ -348,6 +348,12 @@ end
         write_goto
       elsif c_type == 'C_LABEL'
         write_label
+      elsif c_type == 'C_FUNCTION'
+        write_function
+      elsif c_type == 'C_CALL'
+        write_call(@parser.arg1 ,@parser.arg2)
+      elsif c_type == 'C_RETURN'
+        write_return
       end
     end
     @file.close
