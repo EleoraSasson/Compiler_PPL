@@ -2,9 +2,11 @@ require_relative 'parser'
 class CodeWriter
 
   @@jump_number = 0
+  @@label_count = 0
 
   #sets the output asm file
   def initialize(path)
+    write_init
     @parser = Parser.new(path)
     @filename = "#{File.dirname(path)}/#{File.basename(path, ".vm")}.asm"
     @file = File.open(@filename, 'w')
@@ -13,34 +15,11 @@ class CodeWriter
   end
 
   def write_label
-=begin
-    @file.write("// label \n")
-    begin
-      func_name = @function_list[-1] + "$"
-    rescue
-      func_name = ''
-    end
-    label_name_input = @parser.arg1
-    label_name = func_name + label_name_input
-      @file.write("(%s)\n" % label_name)
-=end
     #make sure there's proper brackets in the string
     @file.write("(%s)\n" % @parser.arg1)
   end
 
   def write_goto
-=begin
-     @file.write("// goto\n")
-    begin
-      func_name = @function_list[-1] + "$"
-    rescue
-      func_name = ''
-    end
-    label_name_input = @parser.arg1
-    label_name = func_name + label_name_input
-    @file.write("(%s)\n" % label_name)
-    @file.write("0;JMP\n")
-=end
     #check about brackets
     @file.write("@")
     @file.write("%s\n" % @parser.arg1)
@@ -48,26 +27,108 @@ class CodeWriter
   end
 
   def write_if_goto
-=begin
-    @file.write("// if-goto\n")
-    func_name = @function_list.empty? ? '' : @function_list[-1] + "$"
-    label_name_input = @parser.arg1
-    label_name = func_name + label_name_input
-    @file.write("@SP\n")
-    @file.write("A=M-1\n")
-    @file.write("D=M\n")
-    @file.write("@SP\n")    # adjust stack top
-    @file.write("M=M-1\n")
-    @file.write("@%s\n" % label_name)
-    @file.write("D;JNE\n")
-=end
-    # outPrinter.print(arithmeticTemplate1() + "@" + label +"\nD;JNE\n");
     @file.write("@SP\n")
     @file.write("AM=M-1\n")
     @file.write("D=M\n")
     @file.write("A=A-1\n")
     @file.write("@%s\n" % @parser.arg1)
     @file.write("D;JNE\n")
+  end
+
+  def write_call( func_name, num_args)
+    String new_label = "RETURN_LABEL" + (@@label_count+=1)
+    #@file.write("@RETURN_LABEL" + @@label_count+=1 +"\n")
+    @file.write("@" + new_label + "\n")
+    @file.write("D=A\n")
+    @file.write("@SP\n")
+    @file.write("A+M\n")
+    @file.write("M+D\n")
+    @file.write("@SP\n")
+    @file.write("M=M+1\n")
+    @file.write(pushTemplate("LCL", 0 ,true))
+    @file.write(pushTemplate("ARG",0,true))
+    @file.write(pushTemplate("THIS",0,true))
+    @file.write(pushTemplate("THAT",0,true))
+
+    @file.write("@SP\n")
+    @file.write("D+M\n")
+    @file.write("@5\n")
+    @file.write("D=D-A\n")
+    @file.write("@" + num_args + "\n")
+    @file.write("D=D-A\n")
+    @file.write("@ARG\n")
+    @file.write("M=D\n")
+    @file.write("M=D\n")
+    @file.write("@SP\n")
+    @file.write("D=M\n")
+    @file.write("@LCL\n")
+    @file.write("M=D\n")
+    @file.write("@"+ func_name +"\n")
+    @file.write("0;JMP\n")
+    @file.write("(" + new_label +")\n")
+
+  end
+
+  #for bootstrapping
+  def write_init
+    @file.write("@256\n")
+    @file.write("D=A\n")
+    @file.write("@SP\n")
+    @file.write("M=D\n")
+    write_call("Sys.init",0)
+  end
+
+  #assembly code for "return"
+  def write_return
+    @file.write("@LCL\n" +
+                  "D=M\n" +
+                  "@R11\n" +
+                  "M=D\n" +
+                  "@5\n" +
+                  "A=D-A\n" +
+                  "D=M\n" +
+                  "@R12\n" +
+                  "M=D\n" +
+                  popTemplate("ARG",0,false) +
+                  "@ARG\n" +
+                  "D=M\n" +
+                  "@SP\n" +
+                  "M=D+1\n" +
+                  "@R11\n" +
+                  "D=M-1\n" +
+                  "AM=D\n" +
+                  "D=M\n" +
+                  "@THAT\n" +
+                  "M=D\n" +
+                  "@R11\n" +
+                  "D=M-1\n" +
+                  "AM=D\n" +
+                  "D=M\n" +
+                  "@THIS\n" +
+                  "M=D\n"+
+                  "@R11\n" +
+                  "D=M-1\n" +
+                  "AM=D\n" +
+                  "D=M\n" +
+                  "@ARG\n" +
+                  "M=D\n"+
+                  "@R11\n" +
+                  "D=M-1\n" +
+                  "AM=D\n" +
+                  "D=M\n" +
+                  "@LCL\n" +
+                  "M=D\n"+
+                  "@R12\n" +
+                  "A=M\n" +
+                  "0;JMP\n")
+  end
+
+  def write_function
+    @file.write("(" + @parser.arg1 + ")\n")
+    # for-loop for i in @parser.arg2
+    range 0..@parser.arg2.each { |i|
+      @file.write("@0\n" + "D=A\n" + "@SP\n" + "A=M\n" + "M=D\n" + "@SP\n" + "M=M+1\n")
+    }
   end
 
   #sets arg1 and arg2, and translates into asm commands accordingly
