@@ -4,8 +4,8 @@ require_relative 'code_writer'
 class VMTranslator
 
   puts("Enter the path to a vm file, or to a directory containing vm files")
-  #path = gets.chomp
-  path = 'C:\Users\eleor\OneDrive\Bureau\Year 4\Semester 2\Fundamentals\Homework 1\Project7_lab1\vm files'
+  path = gets.chomp
+  #path = 'C:\Users\eleor\OneDrive\Bureau\Year 4\Semester 2\Fundamentals\Homework 1\Project7_lab1\vm files'
   #path = path.gsub(/\0/, '')
   if path.start_with?('"') && path.end_with?('"')
     # remove the double quotes from the input string using gsub and a regular expression

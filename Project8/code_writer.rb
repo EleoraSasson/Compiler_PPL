@@ -120,7 +120,7 @@ class CodeWriter
                   "M=D\n"+
                   "@R12\n" +
                   "A=M\n" +
-                  "0;JMP\n")
+                  "0;JMP")
   end
 
   def write_function
