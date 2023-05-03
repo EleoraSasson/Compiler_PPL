@@ -480,7 +480,7 @@ class CodeWriter
       elsif c_type == 'C_FUNCTION'
         write_function
       elsif c_type == 'C_CALL'
-        write_call(@parser.arg1 ,@parser.arg2)
+        write_call
       elsif c_type == 'C_RETURN'
         write_return
       end
