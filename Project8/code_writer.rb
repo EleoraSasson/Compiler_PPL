@@ -8,38 +8,108 @@ class CodeWriter
   def initialize(path)
     @parser = Parser.new(path)
     @filename = "#{File.dirname(path)}/#{File.basename(path, ".vm")}.asm"
-    @file = File.open(@filename, 'w')
+    @file = File.open(path, 'w')
     @static_var = File.basename(File.dirname(path)) # useful in declaring static variables
     @function_list = []
+    #write_bootstrap
   end
-
+=begin
+  def set_file_name(path)
+    @parser = Parser.new(path)
+  end
+=end
+  def write_bootstrap
+    # bootstrap code
+    @file.write("@256\n")
+    @file.write("D=A\n")
+    @file.write("@SP\n")
+    @file.write("M=D\n")
+    ## call Sys.init : call Sys.init 0
+    # push return-address
+    sys_init_ret_add = "return-address-sysinit"
+   @file.write("@%s\n" % sys_init_ret_add)
+   @file.write("D=A\n")
+   @file.write("@SP\n")
+   @file.write("A=M\n")
+   @file.write("M=D\n")
+   @file.write("@SP\n")
+   @file.write("M=M+1\n")
+    # push LCL
+   @file.write("@LCL\n")
+   @file.write("D=M\n")
+   @file.write("@SP\n")
+   @file.write("A=M\n")
+   @file.write("M=D\n")
+   @file.write("@SP\n")
+   @file.write("M=M+1\n")
+    # push ARG
+   @file.write("@ARG\n")
+   @file.write("D=M\n")
+   @file.write("@SP\n")
+   @file.write("A=M\n")
+   @file.write("M=D\n")
+   @file.write("@SP\n")
+   @file.write("M=M+1\n")
+    # push THIS
+   @file.write("@THIS\n")
+   @file.write("D=M\n")
+   @file.write("@SP\n")
+   @file.write("A=M\n")
+   @file.write("M=D\n")
+   @file.write("@SP\n")
+   @file.write("M=M+1\n")
+    # push THAT
+   @file.write("@THAT\n")
+   @file.write("D=M\n")
+   @file.write("@SP\n")
+   @file.write("A=M\n")
+   @file.write("M=D\n")
+   @file.write("@SP\n")
+   @file.write("M=M+1\n")
+    # ARG = SP - n - 5
+   @file.write("@SP\n")
+   @file.write("D=M\n")
+   @file.write("@5\n")
+   @file.write("D=D-A\n")
+   @file.write("@ARG\n")
+   @file.write("M=D\n")
+    # LCL = SP
+   @file.write("@SP\n")
+   @file.write("D=M\n")
+   @file.write("@LCL\n")
+   @file.write("M=D\n")
+   @file.write("@Sys.init\n")
+   @file.write("0;JMP\n")
+    # declare a label for the return-address
+   @file.write("(%s)\n" % sys_init_ret_add)
+  end
   def write_init
-    self.file.write("// init\n")
+    @file.write("// init\n")
     # initially set the SP address to 256 (the address for the stack)
-    self.file.write("@256\n")
-    self.file.write("D=A\n")
-    self.file.write("@SP\n")
-    self.file.write("M=D\n")
+    @file.write("@256\n")
+    @file.write("D=A\n")
+    @file.write("@SP\n")
+    @file.write("M=D\n")
     # set the local address to 300
-    self.file.write("@300\n")
-    self.file.write("D=A\n")
-    self.file.write("@LCL\n")
-    self.file.write("M=D\n")
+    @file.write("@300\n")
+    @file.write("D=A\n")
+    @file.write("@LCL\n")
+    @file.write("M=D\n")
     # set the argument address to 400
-    self.file.write("@400\n")
-    self.file.write("D=A\n")
-    self.file.write("@ARG\n")
-    self.file.write("M=D\n")
+    @file.write("@400\n")
+    @file.write("D=A\n")
+    @file.write("@ARG\n")
+    @file.write("M=D\n")
     # set the this address to 3000
-    self.file.write("@3000\n")
-    self.file.write("D=A\n")
-    self.file.write("@THIS\n")
-    self.file.write("M=D\n")
+    @file.write("@3000\n")
+    @file.write("D=A\n")
+    @file.write("@THIS\n")
+    @file.write("M=D\n")
     # set the that address to 3010
-    self.file.write("@3010\n")
-    self.file.write("D=A\n")
-    self.file.write("@THAT\n")
-    self.file.write("M=D\n")
+    @file.write("@3010\n")
+    @file.write("D=A\n")
+    @file.write("@THAT\n")
+    @file.write("M=D\n")
   end
 
   def write_label
@@ -86,10 +156,10 @@ class CodeWriter
   def write_call
     func_name = @parser.arg1()
     num_args = @parser.arg2()
-    @file.write("// call #{func_name} #{num_args}\n")
+    #@file.write("// call #{func_name} #{num_args}\n")
     # push return-address (using label declared below)
-    @file.write("// call : push return-address\n")
-    s = "RETURN_ADDRESS_#{@parser.i}"  # there could be more than one return_addresses in the entire code
+    #@file.write("// call : push return-address\n")
+    s = "RETURN_ADDRESS_#{@cmd_index}"  # there could be more than one return_addresses in the entire code
     @file.write("@#{s}\n")
     @file.write("D=A\n")
     @file.write("@SP\n")
@@ -98,7 +168,7 @@ class CodeWriter
     @file.write("@SP\n")
     @file.write("M=M+1\n")
     # push LCL
-    @file.write("// call : push LCL\n")
+    #@file.write("// call : push LCL\n")
     @file.write("@LCL\n")
     @file.write("D=M\n")
     @file.write("@SP\n")
@@ -107,7 +177,7 @@ class CodeWriter
     @file.write("@SP\n")
     @file.write("M=M+1\n")
     # push ARG
-    @file.write("// call : push ARG\n")
+    #@file.write("// call : push ARG\n")
     @file.write("@ARG\n")
     @file.write("D=M\n")
     @file.write("@SP\n")
@@ -116,7 +186,7 @@ class CodeWriter
     @file.write("@SP\n")
     @file.write("M=M+1\n")
     # push THIS
-    @file.write("// call : push THIS\n")
+    #@file.write("// call : push THIS\n")
     @file.write("@THIS\n")
     @file.write("D=M\n")
     @file.write("@SP\n")
@@ -125,7 +195,7 @@ class CodeWriter
     @file.write("@SP\n")
     @file.write("M=M+1\n")
     # push THAT
-    @file.write("// call : push THAT\n")
+    #@file.write("// call : push THAT\n")
     @file.write("@THAT\n")
     @file.write("D=M\n")
     @file.write("@SP\n")
@@ -134,7 +204,7 @@ class CodeWriter
     @file.write("@SP\n")
     @file.write("M=M+1\n")
     # ARG = SP - n - 5
-    @file.write("// call : ARG = SP - n - 5\n")
+    #@file.write("// call : ARG = SP - n - 5\n")
     @file.write("@SP\n")
     @file.write("D=M\n")
     @file.write("@#{num_args}\n")
@@ -144,13 +214,13 @@ class CodeWriter
     @file.write("@ARG\n")
     @file.write("M=D\n")
     # LCL = SP
-    @file.write("// call : LCL = SP\n")
+    #@file.write("// call : LCL = SP\n")
     @file.write("@SP\n")
     @file.write("D=M\n")
     @file.write("@LCL\n")
     @file.write("M=D\n")
     # goto f
-    @file.write("// call : goto f\n")
+    #@file.write("// call : goto f\n")
     @file.write("@#{func_name}\n")
     @file.write("0;JMP\n")
     # declare a label for the return-address
@@ -261,61 +331,104 @@ class CodeWriter
   end
 
   #sets arg1 and arg2, and translates into asm commands accordingly
-  def writePushPop (index)
+  def writePushPop 
     # no need to pass in command as an argument
     @command = @parser.command_type
     raise 'Invalid command type' unless %w[C_PUSH C_POP].include? @command
     arg1 = @parser.arg1
-    #arg2 = @parser.arg2
+    arg2 = @parser.arg2
 
     if @parser.command_type == 'C_PUSH'
-      if arg1 == 'constant'
-        # e.g. push constant 7
-        @file.write("@" + index + "\n" + "D=A\n" + "@SP\n" + "A=M\n" + "M=D\n" + "@SP\n" + "M=M+1\n")
-      elsif arg1 == 'local'
-        @file.write(pushTemplate("LCL", index, false))
-      elsif arg1 == 'argument'
-        @file.write(pushTemplate("ARG", index, false))
-      elsif arg1 == 'this'
-        @file.write(pushTemplate("THIS", index, false))
-      elsif arg1 == 'that'
-        @file.write(pushTemplate("THAT", index, false))
-      elsif arg1 == 'temp'
-        @file.write(pushTemplate("R5", index.to_i+5, false))
-      elsif arg1 == 'pointer' && index.to_i == 0
-        @file.write(pushTemplate("THIS", index, true))
-      elsif arg1 == 'pointer' && index.to_i == 1
-        @file.write(pushTemplate("THAT", index, true))
-      elsif arg1 == 'static'
-        @file.write(pushTemplate((16+index.to_i).to_s, index, false))
+      # stack operation
+      if arg1 == "constant"
+        @file.write("@%s\n" % arg2)
+        @file.write("D=A\n")    # D = 7
+        @file.write("@SP\n")
+        @file.write("A=M\n")
+        @file.write("M=D\n")    # M[M[base_address]] = 7
+      elsif %w[temp pointer local argument this that].include?(arg1)
+        @file.write("@%s\n" % arg2)
+        @file.write("D=A\n")
+        if arg1 == "temp"
+          @file.write("@5\n")
+          @file.write("A=D+A\n")
+        elsif arg1 == "pointer"
+          @file.write("@3\n")
+          @file.write("A=D+A\n")
+        elsif arg1 == "local"
+          @file.write("@LCL\n")
+          @file.write("A=D+M\n")
+        elsif arg1 == "argument"
+          @file.write("@ARG\n")
+          @file.write("A=D+M\n")
+        elsif arg1 == "this"
+          @file.write("@THIS\n")
+          @file.write("A=D+M\n")
+        elsif arg1 == "that"
+          @file.write("@THAT\n")
+          @file.write("A=D+M\n")
+        end
+          @file.write("D=M\n")
+          @file.write("@SP\n")
+          @file.write("A=M\n")
+          @file.write("M=D\n")    # M[M[base_address]] = 7
+      elsif arg1 == "static"
+        @file.write(@static_var + arg2 + "\n")
+        @file.write("D=M\n")
+        @file.write("@SP\n")
+        @file.write("A=M\n")
+        @file.write("M=D\n")    # M[M[base_address]] = 7
       end
-      # increase address of stack top
-    elsif @parser.command_type == 'C_POP'
-      if arg1 == 'constant'
-        # e.g. push constant 7
-        @file.write("@" + index + "\n" + "D=A\n" + "@SP\n" + "A=M\n" + "M=D\n" + "@SP\n" + "M=M+1\n")
-      elsif arg1 == 'local'
-        @file.write(popTemplate("LCL", index, false))
-      elsif arg1 == 'argument'
-        @file.write(popTemplate("ARG", index, false))
-      elsif arg1 == 'this'
-        @file.write(popTemplate("THIS", index, false))
-      elsif arg1 == 'that'
-        @file.write(popTemplate("THAT", index, false))
-      elsif arg1 == 'temp'
-        @file.write(popTemplate("R5", index.to_i+5, false))
-      elsif arg1 == 'pointer' && index.to_i == 0
-        @file.write(popTemplate("THIS", index, true))
-      elsif arg1 == 'pointer' && index.to_i == 1
-        @file.write(popTemplate("THAT", index, true))
-      elsif arg1 == 'static'
-        @file.write(popTemplate((16+index.to_i).to_s, index, false))
+      @file.write("@SP\n")
+      @file.write("M=M+1\n")  # M[base_address] = M[base_address] + 1
+
+    elsif @parser.command_type == 'C_POP'  #TODO: why pop doesnt have constant
+      @file.write("@%s\n" % arg2)
+      @file.write("D=A\n")
+      if %w[temp pointer local argument this that].include?(arg1)
+        if arg1 == "local"
+          @file.write("@LCL\n")
+        @file.write("D=D+M\n")
+        elsif arg1 == "argument"
+          @file.write("@ARG\n")
+        @file.write("D=D+M\n")
+        elsif arg1 == "this"
+          @file.write("@THIS\n")
+        @file.write("D=D+M\n")
+        elsif arg1 == "that"
+          @file.write("@THAT\n")
+        @file.write("D=D+M\n")
+        elsif arg1 == "temp"
+          @file.write("@5\n")
+        @file.write("D=D+A\n")
+        elsif arg1 == "pointer"
+          @file.write("@3\n")
+          @file.write("D=D+A\n")
+        end
+        @file.write("@13\n")
+        @file.write("M=D\n")
+        @file.write("@SP\n")
+        @file.write("A=M-1\n")
+        @file.write("D=M\n")
+        @file.write("@13\n")
+        @file.write("A=M\n")
+        @file.write("M=D\n")
+        @file.write("@SP\n")
+        @file.write("M=M-1\n")
+      elsif arg1 == "static"
+        @file.write("@SP\n")
+        @file.write("A=M-1\n")
+        @file.write("D=M\n")
+        @file.write(@static_var + arg2 + "\n")  #TODO: self is file
+        @file.write("M=D\n")
+        @file.write("@SP\n")
+        @file.write("M=M-1\n")
       end
-    else
-      # Throw an error for unrecognized segment
-      raise "Error: Unrecognized memory segment #{arg1}"
     end
   end
+
+
+
 
   def pushTemplate(segment, index, is_direct)
     has_pointer = (is_direct) ? "" : "@#{index}\nA=D+A\nD=M\n"
@@ -464,11 +577,12 @@ class CodeWriter
 
   #advances into the vm file and translates the file line by line, until closed
   def create_output
+    write_bootstrap
     while @parser.has_more_commands
       @parser.advance
       c_type = @parser.command_type
       if c_type == 'C_PUSH' || c_type == 'C_POP'
-        writePushPop(@parser.arg2)
+        writePushPop
       elsif c_type == 'C_ARITHMETIC'
         writeArithmetic
       elsif c_type == 'C_IF'

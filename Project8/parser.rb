@@ -113,10 +113,29 @@ class Parser
 
   #in case of push, pop, returns the numeric value (pushpointer8 will return 8)
   def arg2
-    @command.each_char.with_index do |ch, ind|
-      if ch.match?(/\d/)
-        return @command[ind..-1]
+    if %w[add sub neg eq gt lt and or not].include?(@command)
+      raise "No arg2 for arithmetic commands"
+    elsif @command.include?('push')
+      s = @command.split('push')[1]
+      s.each_char.with_index do |ch, ind|
+        if ch.match?(/\d/)
+          return s[ind..-1]
+        end
       end
+    elsif @command.include?('pop')
+      # pop segment index
+      s = @command.split('pop')[1]
+      s.each_char.with_index do |ch, ind|
+        if ch.match?(/\d/)
+          return s[ind..-1]
+        end
+      end
+    elsif @command.include?('function')
+      return @command.match(/\d+$/).to_s
+    elsif @command.include?('call')
+      return @command.split('call')[1]
+    else
+      raise "Unrecognized command type when trying to obtain arg2"
     end
   end
 end
