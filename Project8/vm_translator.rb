@@ -14,7 +14,6 @@ class VMTranslator
     end
     @writer = CodeWriter.new(@asm_path, @single_file)
   end
-
   def compile
     @single_file ? translate(@vm_path) : translate_all
     @writer.close
