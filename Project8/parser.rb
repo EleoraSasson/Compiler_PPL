@@ -1,6 +1,10 @@
 class Parser
   attr_reader :current_command
   def initialize(path_to_vm_file)
+    #if path_to_vm_file is a directory, get the vm file in it
+    if File.directory?(path_to_vm_file)
+      path_to_vm_file = Dir["#{path_to_vm_file}/*.vm"][0]
+    end
     @vm_file = File.open(path_to_vm_file, "r")
   end
 

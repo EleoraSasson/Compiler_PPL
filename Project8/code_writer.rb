@@ -64,12 +64,16 @@ class CodeWriter
   end
 
   def write_push
+    # Check the segment
     case @parser[1]
+      # If 'constant', push the constant value onto the stack.
     when "constant"
       push_stack(constant:@parser[2])
+      # If 'static', load the static variable into the A register and push its value onto the stack.
     when "static"
       load_static
       push_stack
+      # For all other segments, load the segment's base address into the A register, add the offset to the address, and push the value stored at the resulting memory address onto the stack.
     else
       load_memory
       push_stack
@@ -77,14 +81,19 @@ class CodeWriter
   end
 
   def write_pop
+    # Pop the top value off the stack and store it in the D register.
     pop_stack
+    # Check the segment
     if @parser[1] == "static"
+      # If the segment is 'static', load the static variable into the A register and set the M register to the value in the D register.
       load_static(pop: true)
     else
+      # Otherwise, store the address of the target memory location in register 13 (R13), load the value in the D register into the M register at the memory address pointed to by R13, and then increment the R13 register.
       write_file(string: "@13\nM=D")
       load_memory(save_from_r13: true)
     end
   end
+
 
   def write_label
     write_file(string: "(#{@parser[1]})")
@@ -137,32 +146,46 @@ class CodeWriter
     @function_count += 1
   end
 
+  # Loads a static variable into the D register or from the D register into a static variable
   def load_static(pop: false)
     write_file(string: "@#{@parser.file_name.upcase}.#{@parser[2]}")
+    # If pop is true, store the value in D to the memory location. Otherwise, load the value into D
     write_file(string: "#{pop ? "M=D" : "D=M"}")
   end
 
+  # Loads a variable from memory into the D register or stores the value in D to a memory location
   def load_memory(pop: false, save_from_r13: false)
     symbol_hash = Hash["local", "LCL", "argument", "ARG", "this", "THIS", "that", "THAT",
                        "pointer", "THIS", "temp", "5"]
+    # Load the memory index into D
     write_file(string: "@#{@parser[2]}")
     write_file(string: "D=A")
+    # Load the base address of the memory segment into A
     write_file(string: "@#{symbol_hash[@parser[1]]}")
+    # Compute the memory address by adding the index to the base address
     write_file(string: "#{(@parser[1] == "temp" || @parser[1] == "pointer") ? "AD=A+D" : "AD=M+D"}")
+    # If save_from_r13 is true, store the value in the D register to the memory location pointed to by R13
+    # and then store the value in the R13 register to the memory location pointed to by A.
+    # Otherwise, load the value into D
     write_file(string: "#{save_from_r13 ? "@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D" : "D=M"}")
   end
 
 
+
   def push_stack(constant: nil)
+    # Pushes a constant value onto the stack
     write_file(string: "@#{constant}\nD=A") if constant
     write_file(string: "@SP\nA=M\nM=D\n@SP\nM=M+1")
   end
 
   def pop_stack(save_to_d: true)
+    # Pops a value off the stack
+    # If save_to_d is true, the value popped will be saved in the D register
     write_file(string: "@SP\nM=M-1\nA=M#{save_to_d ? "\nD=M" : ""}")
   end
 
   def jump(jump_type)
+    # Implements a jump instruction based on the provided jump type
     write_file(string: "@TRUE_JUMP", set_file_name: true, label: "@")
     write_file(string: "D; #{jump_type}\nD=0")
     write_file(string: "@FALSE_NO_JUMP", set_file_name: true, label: "@")
@@ -173,6 +196,10 @@ class CodeWriter
   end
 
   def arithmetic(calc:, jump_type: nil, unary: false)
+    # Performs an arithmetic operation on the two topmost values on the stack
+    # The operation is specified by the operator
+    # If jump_type is provided, the result of the operation will be used as a boolean and the code will jump based on the jump type
+    # If unary is true, the operation will only use one operand from the stack
     pop_stack
     pop_stack(save_to_d: false) if !unary
     write_file(string: "D=#{unary ? "" : "M"}#{calc}D")
