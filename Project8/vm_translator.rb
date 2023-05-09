@@ -37,14 +37,11 @@ class VMTranslator
 end
 
 puts("Please enter a vm file or a directory containing a vm file")
-=begin
 path = gets.chomp
 if path.start_with?('"') && path.end_with?('"')
   # remove the double quotes from the input string using gsub and a regular expression
   path = path.gsub(/^"|"$/, '')
 end
-=end
-path = 'C:\Users\eleor\OneDrive\Bureau\Year 4\Semester 2\Fundamentals\nand2tetris\nand2tetris\projects\08\FunctionCalls\SimpleFunction'
 # Create a new VMTranslator object and call the compile method
 translator = VMTranslator.new(path)
 translator.compile

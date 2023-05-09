@@ -63,6 +63,7 @@ class CodeWriter
     end
   end
 
+  #function to write push command in assembly
   def write_push
     # Check the segment
     case @parser[1]
@@ -80,6 +81,7 @@ class CodeWriter
     end
   end
 
+  #function to write pop cmmand in assembly
   def write_pop
     # Pop the top value off the stack and store it in the D register.
     pop_stack
@@ -94,11 +96,12 @@ class CodeWriter
     end
   end
 
-
+  #function to write the label line in assembly
   def write_label
     write_file(string: "(#{@parser[1]})")
   end
 
+  #function to write a goto/if goto line in assembly
   def write_goto
     if @parser[0] == "if-goto"
       pop_stack
@@ -108,6 +111,8 @@ class CodeWriter
     write_file(string: "#{jump ? "D;JNE" : "0;JMP"}")
   end
 
+  #function to write a function declaration line in assembly
+  # initialize the functions local variables
   def write_function
     write_file(string: "(#{@parser[1]})")
     @parser[2].to_i.times do
@@ -117,6 +122,7 @@ class CodeWriter
     @function_name = @parser[1]
   end
 
+  # function to write a function call line into hack assembly, and initialize the funcs arguments
   def write_call(init: false)
     @argument_count = init ? 0 : @parser[2]
     function_init
@@ -124,6 +130,7 @@ class CodeWriter
     write_file(string: "(RETURN#{@function_count - 1})", comment: "return address of #{init ? "Sys.init" : @parser[1]}")
   end
 
+  #function to write a function return statement line into hack assembly
   def write_return
     write_file(string: "@5\nD=A\n@LCL\nA=M-D\nD=M\n@15\nM=D")
     pop_stack
@@ -135,6 +142,7 @@ class CodeWriter
     write_file(string: "0;JMP")
   end
 
+  #helper function for write call that initializes the functions local variables
   def function_init
     write_file(string: "@RETURN#{@function_count}\nD=A")
     push_stack
@@ -146,7 +154,8 @@ class CodeWriter
     @function_count += 1
   end
 
-  # Loads a static variable into the D register or from the D register into a static variable
+  # helper function for write_push and write_pop. It loads/stores the value of the statics variables
+
   def load_static(pop: false)
     write_file(string: "@#{@parser.file_name.upcase}.#{@parser[2]}")
     # If pop is true, store the value in D to the memory location. Otherwise, load the value into D
@@ -169,7 +178,6 @@ class CodeWriter
     # Otherwise, load the value into D
     write_file(string: "#{save_from_r13 ? "@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D" : "D=M"}")
   end
-
 
 
   def push_stack(constant: nil)
