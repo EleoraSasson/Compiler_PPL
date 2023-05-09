@@ -81,7 +81,7 @@ class CodeWriter
     end
   end
 
-  #function to write pop cmmand in assembly
+  #function to write pop command in assembly
   def write_pop
     # Pop the top value off the stack and store it in the D register.
     pop_stack
