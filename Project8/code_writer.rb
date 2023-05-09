@@ -63,6 +63,7 @@ class CodeWriter
     end
   end
 
+  #function to write push command in assembly
   def write_push
     case @parser[1]
     when "constant"
@@ -76,6 +77,7 @@ class CodeWriter
     end
   end
 
+  #function to write pop cmmand in assembly
   def write_pop
     pop_stack
     if @parser[1] == "static"
@@ -86,10 +88,12 @@ class CodeWriter
     end
   end
 
+  #function to write the label line in assembly
   def write_label
     write_file(string: "(#{@parser[1]})")
   end
 
+  #function to write a goto/if goto line in assembly
   def write_goto
     if @parser[0] == "if-goto"
       pop_stack
@@ -99,6 +103,8 @@ class CodeWriter
     write_file(string: "#{jump ? "D;JNE" : "0;JMP"}")
   end
 
+  #function to write a function declaration line in assembly
+  # initialize the functions local variables
   def write_function
     write_file(string: "(#{@parser[1]})")
     @parser[2].to_i.times do
@@ -108,6 +114,7 @@ class CodeWriter
     @function_name = @parser[1]
   end
 
+  # function to write a function call line into hack assembly, and initialize the funcs arguments
   def write_call(init: false)
     @argument_count = init ? 0 : @parser[2]
     function_init
@@ -115,6 +122,7 @@ class CodeWriter
     write_file(string: "(RETURN#{@function_count - 1})", comment: "return address of #{init ? "Sys.init" : @parser[1]}")
   end
 
+  #function to write a function return statement line into hack assembly
   def write_return
     write_file(string: "@5\nD=A\n@LCL\nA=M-D\nD=M\n@15\nM=D")
     pop_stack
@@ -126,6 +134,7 @@ class CodeWriter
     write_file(string: "0;JMP")
   end
 
+  #helper function for write call that initializes the functions local variables
   def function_init
     write_file(string: "@RETURN#{@function_count}\nD=A")
     push_stack
@@ -137,12 +146,31 @@ class CodeWriter
     @function_count += 1
   end
 
+  # helper function for write_push and write_pop. It loads/stores the value of the statics variables
+
   def load_static(pop: false)
     write_file(string: "@#{@parser.file_name.upcase}.#{@parser[2]}")
     write_file(string: "#{pop ? "M=D" : "D=M"}")
   end
 
-  def load_memory(pop: false, save_from_r13: false)
+=begin
+  def load_static(pop: false)
+    write_file(string: "@#{@parser.file_name.upcase}.#{@parser[2]}")
+    if pop
+      write_file(string: "D=A")
+      write_pop
+    else
+      write_file(string: "D=M")
+      write_push
+    end
+  end
+=end
+
+
+  # helper function for write_push and write_pop. loads /stores the value of nonstatic memory segments
+  # it calculates the mem address of the segment and writes the correct assembly code
+  # to push/pop the value to/from the stack
+   def load_memory(pop: false, save_from_r13: false)
     symbol_hash = Hash["local", "LCL", "argument", "ARG", "this", "THIS", "that", "THAT",
                        "pointer", "THIS", "temp", "5"]
     write_file(string: "@#{@parser[2]}")

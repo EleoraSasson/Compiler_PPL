@@ -31,6 +31,7 @@ class VMTranslator
 end
 
 puts("Please enter a vm file or a directory containing a vm file")
+puts("if there is only one vm file in the directory then please input the path to the vm file, else, input the directory containing the vm files")
 path = gets.chomp
 if path.start_with?('"') && path.end_with?('"')
   # remove the double quotes from the input string using gsub and a regular expression
