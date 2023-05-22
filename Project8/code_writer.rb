@@ -224,6 +224,7 @@ class CodeWriter
     @asm_file.close
   end
 
+  #  write_file(string: "@TRUE_JUMP", set_file_name: true, label: "@")
   def write_file(string:"", set_line_number: false, comment: "", set_file_name: false, label: "")
     line_number = set_line_number ? @parser.line_number : ""
     if !set_file_name
