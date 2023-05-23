@@ -9,6 +9,7 @@ class Main
     # remove the double quotes from the input string using gsub and a regular expression
     path = path.gsub(/^"|"$/, '')
   end
-  @token = Tokenizer.new(path)
+  xml_file = File.open(path.gsub(/\.jack$/, ".xml"), "w")
+  @token = Tokenizer.new(path, xml_file)
   @token.write_token_file
 end

@@ -7,9 +7,9 @@ STRINGS = /^"[^"\n\r]*"$/
 IDENTIFIER = /^[a-zA-Z]+[a-zA-Z_0-9]*$/
 class Tokenizer
 
-  def initialize(path_to_jack_file)
+  def initialize(path_to_jack_file, path_to_xml_file)
     @jack_file = File.open(path_to_jack_file, "r")
-    @xml_file = File.open(path_to_jack_file.gsub(/\.jack$/, ".xml"), "w")
+    @xml_file = File.open(path_to_xml_file, "w")
     @current_command = ""
     @commands = []
     @current_index = 0
