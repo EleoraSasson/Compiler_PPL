@@ -8,5 +8,6 @@ class Main
     # remove the double quotes from the input string using gsub and a regular expression
     path = path.gsub(/^"|"$/, '')
   end
-  Tokenizer.new(path)
+  @token = Tokenizer.new(path)
+  @token.write_token_file
 end

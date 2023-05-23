@@ -9,12 +9,19 @@ class Tokenizer
 
   def initialize(path_to_jack_file)
     @jack_file = File.open(path_to_jack_file, "r")
-    #xml file is path of jack_file with .xml extension
     @xml_file = File.open(path_to_jack_file.gsub(/\.jack$/, ".xml"), "w")
     @current_command = ""
     @commands = []
     @current_index = 0
-    write_command
+  end
+
+  def write_token_file
+    while has_more_tokens?
+      advance
+      write_command
+    end
+    @xml_file.close
+    @jack_file.close
   end
 
   def has_more_tokens?
@@ -97,19 +104,19 @@ class Tokenizer
 
   def write_command
     advance until !@current_command.empty?
-    @xml_file.write("<#{token_type}> ")
-    if @current_command.include? ('"')
-      @xml_file.write(@current_command[1..-2])
-    elsif @current_command == "<"
-      @xml_file.write("&lt;")
-    elsif @current_command == ">"
-      @xml_file.write("&gt;")
-    elsif @current_command == "&"
-      @xml_file.write("&amp;")
-    else
-      @xml_file.write(@current_command)
-    end
-    @xml_file.write(" </#{token_type}>\n")
+      @xml_file.write("<#{token_type}> ")
+      if @current_command.include? ('"')
+        @xml_file.write(@current_command[1..-2])
+      elsif @current_command == "<"
+        @xml_file.write("&lt;")
+      elsif @current_command == ">"
+        @xml_file.write("&gt;")
+      elsif @current_command == "&"
+        @xml_file.write("&amp;")
+      else
+        @xml_file.write(@current_command)
+      end
+      @xml_file.write(" </#{token_type}>\n")
   end
 
   def keyword
