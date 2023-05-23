@@ -59,7 +59,6 @@ class Tokenizer
     end
     return res.flatten.select {|s| !s.empty?}
   end
-end
 =begin
   def advance
     while has_more_tokens?
@@ -73,46 +72,44 @@ end
   def delete_comments
     while @current_line.include?("/**")
       while !has_more_tokens? && !@current_line.include?("*/")
-        @current_line = @jack_file.gets.strip
+        @current_line = @xml_file.gets.strip
       end
       return nil if !has_more_tokens?
       @current_line.gsub!(/\/\*\*.*\*\//, "")
       @current_line.gsub!(/.*\*\//, "")
     end
   end
-  def token_type  #TODO: if empty, should NOT write identifier
+  def token_type
     if @current_command.match(KEYWORDS)
-      keyword
+      return("keyword")
     elsif @current_command.match(SYMBOLS)
-      symbol
+      return("symbol")
     elsif @current_command.match(INTS)
-      int_val
+      return("integerConstant")
     elsif @current_command.match(STRINGS)
-      string_val
+      return("stringConstant")
     elsif @current_command.match(IDENTIFIER)
-      identifier
+      return("identifier")
     else
       return nil
     end
   end
 
   def write_command
-    while has_more_tokens?
-      @xml_file.write("<#{token_type}> ")
-      if @current_command.include? ('"')
-        @xml_file.write(@current_command[1..-2])
-      elsif @current_command == "<"
-        @xml_file.write("&lt;")
-      elsif @current_command == ">"
-        @xml_file.write("&gt;")
-      elsif @current_command == "&"
-        @xml_file.write("&amp;")
-      else
-        @xml_file.write(@current_command)
-      end
-      @xml_file.write(" </#{token_type}>\n")
-      advance
+    advance until !@current_command.empty?
+    @xml_file.write("<#{token_type}> ")
+    if @current_command.include? ('"')
+      @xml_file.write(@current_command[1..-2])
+    elsif @current_command == "<"
+      @xml_file.write("&lt;")
+    elsif @current_command == ">"
+      @xml_file.write("&gt;")
+    elsif @current_command == "&"
+      @xml_file.write("&amp;")
+    else
+      @xml_file.write(@current_command)
     end
+    @xml_file.write(" </#{token_type}>\n")
   end
 
   def keyword
@@ -134,4 +131,4 @@ end
   def string_val
     @current_command.gsub(/"/, "") if token_type == :stringConstant
   end
-
+end
