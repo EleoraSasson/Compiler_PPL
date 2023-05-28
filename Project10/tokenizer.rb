@@ -14,14 +14,17 @@ class Tokenizer
     @commands = []
     @current_index = 0
   end
+  def peek
+    @commands.first
+  end
 
   def write_token_file
     while has_more_tokens?
       advance
       write_command
     end
-    @xml_file.close
-    @jack_file.close
+    #@xml_file.close
+    #@jack_file.close
   end
 
   def has_more_tokens?
