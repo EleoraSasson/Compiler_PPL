@@ -30,14 +30,16 @@ class Main
   end
 
   if @single_file == true
-    #compile_file(@jack_path)
+    #compile_file(path)
     xml_path = path.gsub(".jack", ".xml")
     @compile_engine = CompileEngine.new(xml_path)
     @compile_engine.set_tokenizer(path)
     @compile_engine.write
     @compile_engine.close
+
   else
     Dir["#{@jack_path}/*.jack"].each do |file|
+      #compile_file(file)
       xml_path = file.gsub(".jack", ".xml")
       @compile_engine = CompileEngine.new(xml_path)
       @compile_engine.set_tokenizer(file)
