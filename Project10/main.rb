@@ -31,9 +31,9 @@ class Main
 
   if @single_file == true
     #compile_file(@jack_path)
-    xml_path = @jack_path.gsub(".jack", ".xml")
+    xml_path = path.gsub(".jack", ".xml")
     @compile_engine = CompileEngine.new(xml_path)
-    @compile_engine.set_tokenizer(jack_path)
+    @compile_engine.set_tokenizer(path)
     @compile_engine.write
     @compile_engine.close
   else
