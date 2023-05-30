@@ -4,18 +4,9 @@ require_relative 'tokenizer'
 require_relative 'compilationEngine'
 
 class Main
-  def compile_file(jack_path)
-    xml_path = jack_path.gsub(".jack", ".xml")
-    @compile_engine = CompileEngine.new(xml_path)
-    p "Engine Created"
-    @compile_engine.set_tokenizer(jack_path)
-    p "Tokenizer Created"
-    @compile_engine.write
-    @compile_engine.close
-  end
 
   puts("Please enter a jack file or a directory containing a jack file")
-  #path = 'C:\Users\eleor\OneDrive\Bureau\Year 4\Semester 2\Fundamentals\nand2tetris\nand2tetris\projects\10\ArrayTest\Main.jack'
+
   path = gets.chomp
   if path.start_with?('"') && path.end_with?('"')
     # remove the double quotes from the input string using gsub and a regular expression

@@ -20,32 +20,32 @@ class CompileEngine
 
   def write
     write_labels(start: true, statement: "class")
-    fast_foward(3)
+    fast_forward(3)
     compile_classVarDec until @tokenizer.command_segment != "classVarDec"
     compile_subroutineDec until @tokenizer.command_segment != "subroutineDec"
-    fast_foward #print }
+    fast_forward #print }
     @xml_file.write("</class>\n")
   end
 
   def compile_classVarDec(vardec: false)
     write_labels(statement: "#{vardec ? "varDec" : "classVarDec"}")
-    fast_foward until command == ";"
-    fast_foward
+    fast_forward until command == ";"
+    fast_forward
     write_labels(start: false, statement: "#{vardec ? "varDec" : "classVarDec"}")
   end
 
   def compile_subroutineDec
     write_labels(statement: "subroutineDec")
-    fast_foward(4) # print "function/method returnType funcName ("
+    fast_forward(4) # print "function/method returnType funcName ("
     write_labels(statement: "parameterList")
-    fast_foward until command == ")"
+    fast_forward until command == ")"
     write_labels(start: false, statement: "parameterList")
-    fast_foward #print ")"
+    fast_forward #print ")"
     write_labels(statement: "subroutineBody")
-    fast_foward #print "{"
+    fast_forward #print "{"
     compile_classVarDec(vardec: true) until @tokenizer.command_segment != "varDec"
     compile_statements
-    fast_foward #print }
+    fast_forward #print }
     write_labels(start: false, statement: "subroutineBody")
     write_labels(start: false, statement: "subroutineDec")
   end
@@ -75,44 +75,44 @@ class CompileEngine
   end
 
   def compile_while_if
-    fast_foward(2) #print "while (" "if (" 
+    fast_forward(2) #print "while (" "if (" 
     compile_expression
-    fast_foward(2) #print ") {" ") {"
+    fast_forward(2) #print ") {" ") {"
     compile_statements
-    fast_foward #print "}"
+    fast_forward #print "}"
     if command == "else"
-      fast_foward(2) #print "else {"
+      fast_forward(2) #print "else {"
       compile_statements
-      fast_foward #print "}"
+      fast_forward #print "}"
     end
   end
 
   def compile_let
     while command != "="
-      command == "[" ? compile_expression_list(sub_call: false) : fast_foward
+      command == "[" ? compile_expression_list(sub_call: false) : fast_forward
     end
     compile_expression_list(sub_call: false)
   end
 
   def compile_return
-    fast_foward #print "return"
+    fast_forward #print "return"
     compile_expression if command != ";"
-    fast_foward #print ";"
+    fast_forward #print ";"
   end
 
   def compile_do
-    fast_foward(2) #print "do" and the function name or array name imagine "obj_arr[3].callfunc"
-    compile_subroutineCall
-    fast_foward #print ";"
+    fast_forward(2) #print "do" and the function name or array name imagine "obj_arr[3].callfunc"
+    compile_subroutine_call
+    fast_forward #print ";"
   end
 
-  def compile_subroutineCall(end_term: false)
+  def compile_subroutine_call(end_term: false)
     while command.match(Sub)
       case command
       when "("
         compile_expression_list
       when "."
-        fast_foward(2)
+        fast_forward(2)
       when "["
         compile_expression_list(sub_call: false)
       end
@@ -121,29 +121,29 @@ class CompileEngine
   end
 
   def compile_expression_list(sub_call: true)
-    fast_foward #print "("
+    fast_forward #print "("
     write_labels(statement: "expressionList") if sub_call
     if sub_call
-      (command == "," ? fast_foward : compile_expression) until command == ")"
+      (command == "," ? fast_forward : compile_expression) until command == ")"
     else
       compile_expression
     end
     write_labels(start: false, statement: "expressionList") if sub_call
-    fast_foward #print ")" 
+    fast_forward #print ")" 
   end
 
   def compile_expression(expression: true)
     write_labels(statement: "expression") if expression
     write_labels(statement: "term")
-    case current_expression_seg
+    case current_expression_segment
     when "integerConstant", "stringConstant", "keywordConstant"
-      fast_foward
+      fast_forward
       compile_op
     when "unaryOp"
       compile_op(write_statement: false, unary: true)
     when "identifier"
-      fast_foward
-      command.match(Op) ? compile_op : compile_subroutineCall(end_term: true)
+      fast_forward
+      command.match(Op) ? compile_op : compile_subroutine_call(end_term: true)
     when "("
       compile_expression_list(sub_call: false)
       compile_op
@@ -153,7 +153,7 @@ class CompileEngine
     write_labels(start: false, statement: "expression") if expression
   end
 
-  def current_expression_seg
+  def current_expression_segment
     if command.match(Integer)
       return "integerConstant"
     elsif command.match(String)
@@ -176,7 +176,7 @@ class CompileEngine
   def compile_op(write_statement: true, unary: false)
     write_labels(start: false, statement: "term") if write_statement
     if command.match(Op) || command.match(Unary)
-      fast_foward
+      fast_forward
       compile_expression(expression: false)
     end
     write_labels(start: false, statement: "term") if unary
@@ -192,8 +192,8 @@ class CompileEngine
     @xml_file.write("<#{start ? "" : "/"}#{statement}>\n")
   end
 
-  # fast_foward is to print the simple "<tag> name </tag>" lines
-  def fast_foward(n=1)
+  # fast_forward is to print the simple "<tag> name </tag>" lines
+  def fast_forward(n=1)
     n.times do
       @tokenizer.write_command
       @tokenizer.advance
