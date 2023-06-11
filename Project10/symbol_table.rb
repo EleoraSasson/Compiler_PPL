@@ -3,8 +3,8 @@ class SymbolTable
                 :static, :field, :var, :argument
   CLASS = /^static|field$/
   SUBROUTINE = /^var|argument$/
-  def initialize(parent_node: nil, scope: "class")#()
-    @subroutine_table = {}
+  def initialize(parent_node= nil, scope= "class")#()
+    @hash = {}
     @static = 0
     @field = 0
     @var = 0
@@ -25,11 +25,11 @@ class SymbolTable
   def define(name:, type:, kind:)
     @type = type
     @kind = kind
-    @subroutine_table[name] = {type:type, kind:kind, index: var_count(kind: kind, inc: true),scope: @scope}
+    @hash[name] = {type:type, kind:kind, index: var_count(kind: kind, inc: true),scope: @scope}
   end
 
   def start_subroutine(method: false, copy_field: false)
-    @subroutine_table = {}
+    @hash = {}
     @type = nil
     @kind = nil
     @scope = nil
@@ -50,6 +50,29 @@ class SymbolTable
     end
   end
 
+  def clean_symbols(copy_field=false)
+    @hash = {}
+    @type = nil
+    @kind = nil
+    @scope = nil
+    @static = 0
+    @field = 0
+    @var = 0
+    @argument = 0
+    @previous = nil
+
+    if copy_field
+      newp = SymbolTable.new
+      @parent_node.hash.each_key do |k|
+        if @parent_node.hash[k][:kind] == "static"
+          newp.define(name: k, type: @parent_node.hash[k][:type], kind: "static")
+        end
+      end
+      @parent_node = newp
+    end
+  end
+
+
   def var_count(kind:, inc: false)
     index = self.send(kind)
     self.send("#{kind}=", index + 1) if inc
@@ -58,13 +81,13 @@ class SymbolTable
 
   def search_symbol(symbol_name)
     tmp_parent = @parent_node
-    tmp_hash = @subroutine_table
-    while !@subroutine_table.has_key?(symbol_name) && @parent_node
-      @subroutine_table = parent_node.hash
+    tmp_hash = @hash
+    while !@hash.has_key?(symbol_name) && @parent_node
+      @hash = parent_node.hash
       @parent_node = @parent_node.parent_node
     end
-    res = @subroutine_table.has_key?(symbol_name) ?  @subroutine_table[symbol_name] : nil
-    @subroutine_table = tmp_hash
+    res = @hash.has_key?(symbol_name) ?  @hash[symbol_name] : nil
+    @hash = tmp_hash
     @parent_node = tmp_parent
     return res
   end

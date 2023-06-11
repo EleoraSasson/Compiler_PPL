@@ -22,8 +22,8 @@ class Main
 
   if @single_file == true
     #compile_file(path)
-    xml_path = path.gsub(".jack", ".xml")
-    @compile_engine = CompileEngine.new(xml_path)
+    vm_path = path.gsub(".jack", ".vm")
+    @compile_engine = CompileEngine.new(vm_path)
     @compile_engine.set_tokenizer(path)
     @compile_engine.write
     @compile_engine.close
@@ -31,8 +31,8 @@ class Main
   else
     Dir["#{@jack_path}/*.jack"].each do |file|
       #compile_file(file)
-      xml_path = file.gsub(".jack", ".xml")
-      @compile_engine = CompileEngine.new(xml_path)
+      vm_path = file.gsub(".jack", ".vm")
+      @compile_engine = CompileEngine.new(vm_path)
       @compile_engine.set_tokenizer(file)
       @compile_engine.write
       @compile_engine.close

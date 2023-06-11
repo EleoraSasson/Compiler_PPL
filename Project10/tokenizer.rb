@@ -6,18 +6,19 @@ class Tokenizer
   STRINGS = /^"[^"\n\r]*"$/
   IDENTIFIER = /^[a-zA-Z]+[a-zA-Z_0-9]*$/
   attr_reader :current_command, :commands
-  def initialize(file_path, xml_file)
+  def initialize(file_path)
     @input_file = File.open(file_path, "r")
     @current_index = 0
     @current_command = ""
     @commands = []
-    @xml_file = xml_file
   end
 
   def has_more_lines?
     !@input_file.eof?
   end
-
+  def line_number
+    return @input_file.lineno
+  end
   def line_advance
     while has_more_lines?
       @current_line = @input_file.gets.strip.gsub(/(\/\/.*)|\r|\n/, "")
