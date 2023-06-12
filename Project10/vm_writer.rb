@@ -37,8 +37,8 @@ class VMWriter
     end
   end
 
-  def create_label(label, filename, line_number, position)
-    return "#{label}#{position}.#{filename}.#{line_number}"
+  def create_label(label, file_name, line_number, position)
+    return "#{label}#{position}.#{file_name}.#{line_number}"
   end
 
 

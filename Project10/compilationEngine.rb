@@ -71,7 +71,7 @@ class CompileEngine
 
   def compile_subroutineDec
     method = 0
-    curr_function_type, curr_funcname = command, fast_forward, fast_forward
+    curr_function_type, curr_func_name = command, fast_forward, fast_forward
     if curr_function_type == "function"
       @subroutine_table.clean_symbols(true)
     else
@@ -88,7 +88,7 @@ class CompileEngine
     fast_forward #print "{"
     compile_classVarDec(symbol_table: false) while @tokenizer.command_segment == "varDec"
     @subroutine_var_count = @subroutine_table.var_count(kind: "var")
-    @vm_writer.write_function(@class_name + "." + curr_funcname, @subroutine_var_count)
+    @vm_writer.write_function(@class_name + "." + curr_func_name, @subroutine_var_count)
     compile_constructor if curr_function_type == "constructor"
     if method == 1
       @vm_writer.puts("push argument 0")
@@ -216,7 +216,7 @@ class CompileEngine
     end
     if @subroutine_table.type_of(curr_var_name) && @subroutine_table.type_of(curr_var_name) != "Array"
       @vm_writer.puts("push #{@subroutine_table.kind_of(curr_var_name)} #{@subroutine_table.index_of(curr_var_name)}")
-      curr_funcname = "#{@subroutine_table.type_of(curr_var_name)}" + "." + fast_forward
+      curr_func_name = "#{@subroutine_table.type_of(curr_var_name)}" + "." + fast_forward
       method = 1
       fast_forward
     elsif @subroutine_table.type_of(curr_var_name) == "Array"
@@ -232,17 +232,17 @@ class CompileEngine
       end
       return
     elsif curr_type_identifier == "."
-      curr_funcname = curr_var_name + "." + fast_forward
+      curr_func_name = curr_var_name + "." + fast_forward
       fast_forward
     elsif curr_type_identifier == "("
       method = 1
       @vm_writer.puts("push pointer 0")
-      curr_funcname = @class_name + "." + curr_var_name
+      curr_func_name = @class_name + "." + curr_var_name
     else
       raise "no such subroutine"
     end
     c = compile_expression_list
-    @vm_writer.write_call(curr_funcname, c + method)
+    @vm_writer.write_call(curr_func_name, c + method)
   end
 
   def compile_expression_list(sub_call: true)

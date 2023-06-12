@@ -11,10 +11,10 @@ class SymbolTable
     @argument = 0
     @parent_node = parent_node
     @scope = scope
-    %w(kind type index).each do |funcname|
-      define_singleton_method("#{funcname}_of") do |symbol_name|
+    %w(kind type index).each do |func_name|
+      define_singleton_method("#{func_name}_of") do |symbol_name|
         return nil if !search_symbol(symbol_name)
-        res = search_symbol(symbol_name)[funcname.to_sym]
+        res = search_symbol(symbol_name)[func_name.to_sym]
         return "this" if res == "field"
         return "local" if res == "var"
         return res
@@ -80,15 +80,15 @@ class SymbolTable
   end
 
   def search_symbol(symbol_name)
-    tmp_parent = @parent_node
-    tmp_hash = @hash
+    temp_parent = @parent_node
+    temp_hash = @hash
     while !@hash.has_key?(symbol_name) && @parent_node
       @hash = parent_node.hash
       @parent_node = @parent_node.parent_node
     end
     res = @hash.has_key?(symbol_name) ?  @hash[symbol_name] : nil
-    @hash = tmp_hash
-    @parent_node = tmp_parent
+    @hash = temp_hash
+    @parent_node = temp_parent
     return res
   end
 
