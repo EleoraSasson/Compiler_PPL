@@ -7,7 +7,7 @@ class SymbolTable
     @hash = {}
     @static = 0
     @field = 0
-    @var = 0
+    @var = 0 
     @argument = 0
     @parent_node = parent_node
     @scope = scope
@@ -40,13 +40,13 @@ class SymbolTable
     @previous = nil
 
     if copy_field
-      newp = SymbolTable.new
+      new_parent = SymbolTable.new
       @parent_node.hash.each_key do |k|
         if @parent_node.hash[k][:kind] == "static"
-          newp.define(name: k, type: @parent_node.hash[k][:type], kind: "static")
+          new_parent.define(name: k, type: @parent_node.hash[k][:type], kind: "static")
         end
       end
-      @parent_node = newp
+      @parent_node = new_parent
     end
   end
 
@@ -62,13 +62,13 @@ class SymbolTable
     @previous = nil
 
     if copy_field
-      newp = SymbolTable.new
+      new_parent = SymbolTable.new
       @parent_node.hash.each_key do |k|
         if @parent_node.hash[k][:kind] == "static"
-          newp.define(name: k, type: @parent_node.hash[k][:type], kind: "static")
+          new_parent.define(name: k, type: @parent_node.hash[k][:type], kind: "static")
         end
       end
-      @parent_node = newp
+      @parent_node = new_parent
     end
   end
 
