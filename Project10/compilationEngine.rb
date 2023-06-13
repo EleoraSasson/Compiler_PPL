@@ -15,20 +15,17 @@ class CompileEngine
     @hash = {}  # hash table for symbol table
     @vm_file = File.open(vm_file, "w")
     @symbol_table = SymbolTable.new()
-    @subroutine_table = SymbolTable.new(parent_node= @symbol_table, scope= "subroutine")
+    @subroutine_table = SymbolTable.new(parent_node: @symbol_table, scope: "subroutine")
     @vm_writer = VMWriter.new(vm_file)
     create_ascii
   end
 
   def create_ascii
     @hash = {}
-
     (' '..'~').each do |char|
       @hash[char] = char.ord
     end
   end
-
-
   def set_tokenizer(jack_file_path)
     @tokenizer = Tokenizer.new(jack_file_path)
   end
@@ -47,10 +44,8 @@ class CompileEngine
   #         (command == "," ? @subroutine_table.dup(fastforward) : @subroutine_table.define(kind: command, type: fastforward, name: fastforward)) if !classtable
   #
   def write_class_table(symbol_table = true)
-    # define(name: name, type: @type, kind: @kind)
-    name = fast_forward
-    (command == "," ? @symbol_table.define(name: name, type: @type, kind: @kind) : @symbol_table.define(kind: command, type: fast_forward, name: fast_forward)) if symbol_table
-    (command == "," ? @subroutine_table.define(name: name, type: @type, kind: @kind) : @subroutine_table.define(kind: command, type: fast_forward, name: fast_forward)) if !symbol_table
+    (command == "," ? @symbol_table.duplicate(fast_forward) : @symbol_table.define(kind: command, type: fast_forward, name: fast_forward)) if symbol_table
+    (command == "," ? @subroutine_table.duplicate(fast_forward) : @subroutine_table.define(kind: command, type: fast_forward, name: fast_forward)) if !symbol_table
     fast_forward
   end
 
@@ -71,7 +66,7 @@ class CompileEngine
 
   def compile_subroutineDec
     method = 0
-    curr_function_type, curr_func_name = command, fast_forward, fast_forward
+    curr_function_type, curr_return_type, curr_func_name = command, fast_forward, fast_forward
     if curr_function_type == "function"
       @subroutine_table.clean_symbols(true)
     else
@@ -88,20 +83,20 @@ class CompileEngine
     fast_forward #print "{"
     compile_classVarDec(symbol_table: false) while @tokenizer.command_segment == "varDec"
     @subroutine_var_count = @subroutine_table.var_count(kind: "var")
-    @vm_writer.write_function(@class_name + "." + curr_func_name, @subroutine_var_count)
+    @vm_writer.write_function(command_name: @class_name + "." + curr_func_name, var_count: @subroutine_var_count)
     compile_constructor if curr_function_type == "constructor"
     if method == 1
-      @vm_writer.puts("push argument 0")
-      @vm_writer.puts("pop pointer 0")
+     write_vm("push argument 0")
+     write_vm("pop pointer 0")
     end
     compile_statements
     fast_forward #print }
   end
 
   def compile_constructor
-    @vm_writer.write_push("constant", @class_var_count)
-    @vm_writer.write_call("Memory.alloc", 1)
-    @vm_writer.write_pop("pointer", 0)
+    @vm_writer.write_push(segment: "constant", index: @class_var_count)
+    @vm_writer.write_call(command_name: "Memory.alloc", argument_count: 1)
+    @vm_writer.write_pop(segment: "pointer", index: 0)
   end
 
 
@@ -127,59 +122,56 @@ class CompileEngine
   end
 
   def compile_while
-    start = @vm_writer.create_label("WHILE", @class_name, @tokenizer.line_number, "START")
-    while_end = @vm_writer.create_label("WHILE", @class_name, @tokenizer.line_number, "END")
-    @vm_writer.write_label(start)
+    start = @vm_writer.create_label(label: "WHILE", filename: @class_name, line_number: @tokenizer.line_number, position: "START")
+    while_end = @vm_writer.create_label(label: "WHILE", filename: @class_name, line_number: @tokenizer.line_number, position: "END")
+    @vm_writer.write_label(label_name: start)
     fast_forward(2)
     compile_expression
-    @vm_writer.puts("not")
-    @vm_writer.write_if(while_end)
+   write_vm("not")
+    @vm_writer.write_if(label_name: while_end)
     fast_forward(2)
     compile_statements
-    @vm_writer.write_goto(start)
+    @vm_writer.write_goto(label_name: start)
     fast_forward
-    @vm_writer.write_label(while_end)
+    @vm_writer.write_label(label_name: while_end)
   end
 
   def compile_if
-    else_start = @vm_writer.create_label("ELSE", @class_name, @tokenizer.line_number, "START")
-    else_end = @vm_writer.create_label("ELSE", @class_name, @tokenizer.line_number, "END")
+    else_start = @vm_writer.create_label(label: "ELSE", filename: @class_name, line_number: @tokenizer.line_number, position: "START")
+    else_end = @vm_writer.create_label(label: "ELSE", filename: @class_name, line_number: @tokenizer.line_number, position: "END")
     fast_forward(2)
     compile_expression
-    @vm_writer.puts("not")
-    @vm_writer.write_if(else_start)
+   write_vm("not")
+    @vm_writer.write_if(label_name: else_start)
     fast_forward(2)
     compile_statements
-    @vm_writer.write_goto(else_end)
-    @vm_writer.write_label(else_start)
+    @vm_writer.write_goto(label_name: else_end)
+    @vm_writer.write_label(label_name: else_start)
     fast_forward
     if command == "else"
       fast_forward(2)
       compile_statements
       fast_forward
     end
-    @vm_writer.write_label(else_end)
+    @vm_writer.write_label(label_name: else_end)
   end
 
-  #todo: if bug change to ccomand
   def compile_let
     fast_forward
+    current_command = command
     if fast_forward == "["
-      @vm_writer.puts("push #{@subroutine_table.kind_of(command)} #{@subroutine_table.index_of(command)}")
+     write_vm("push #{@subroutine_table.kind_of(current_command)} #{@subroutine_table.index_of(current_command)}")
       fast_forward
       compile_expression
       fast_forward
-      @vm_writer.puts("add")
+     write_vm("add")
       fast_forward
       compile_expression
-      @vm_writer.puts("pop temp 0\n
-                       pop pointer 1\n
-                       push temp 0\n
-                       pop that 0")
+     write_vm("pop temp 0\npop pointer 1\npush temp 0\npop that 0")
     else
       fast_forward
       compile_expression
-      @vm_writer.puts("pop #{@subroutine_table.kind_of(command)} #{@subroutine_table.index_of(ccomand)}")
+      write_vm("pop #{@subroutine_table.kind_of(current_command)} #{@subroutine_table.index_of(current_command)}")
     end
     fast_forward
   end
@@ -187,25 +179,25 @@ class CompileEngine
   def compile_return
     fast_forward
     if command == "this"
-      @vm_writer.write_push("pointer", 0)
+      @vm_writer.write_push(segment: "pointer", index: 0)
       fast_forward
     elsif command != ";"
       compile_expression
     elsif command == ";"
-      @vm_writer.puts("push constant 0")
+     write_vm("push constant 0")
     end
-    @vm_writer.puts("return")
+   write_vm("return")
     fast_forward
   end
 
   def compile_do
     fast_forward
-    compile_subroutine_call
-    @vm_writer.write_pop("temp", 0)
+    compile_subroutine_call(call: true)
+    @vm_writer.write_pop(segment: "temp", index: 0)
     fast_forward
   end
 
-  def compile_subroutine_call(from_identifier: false)
+  def compile_subroutine_call(end_term: false, call: false, from_identifier: false)
     method = 0
     if from_identifier
       curr_var_name = @previous_command
@@ -215,19 +207,19 @@ class CompileEngine
       curr_type_identifier = fast_forward
     end
     if @subroutine_table.type_of(curr_var_name) && @subroutine_table.type_of(curr_var_name) != "Array"
-      @vm_writer.puts("push #{@subroutine_table.kind_of(curr_var_name)} #{@subroutine_table.index_of(curr_var_name)}")
+     write_vm("push #{@subroutine_table.kind_of(curr_var_name)} #{@subroutine_table.index_of(curr_var_name)}")
       curr_func_name = "#{@subroutine_table.type_of(curr_var_name)}" + "." + fast_forward
       method = 1
       fast_forward
     elsif @subroutine_table.type_of(curr_var_name) == "Array"
-      @vm_writer.puts("push #{@subroutine_table.kind_of(curr_var_name)} #{@subroutine_table.index_of(curr_var_name)}")
+     write_vm("push #{@subroutine_table.kind_of(curr_var_name)} #{@subroutine_table.index_of(curr_var_name)}")
       if command == "["
         fast_forward
         compile_expression
         fast_forward
-        @vm_writer.puts("add")
-        @vm_writer.puts("pop pointer 1")
-        @vm_writer.puts("push that 0")
+       write_vm("add")
+       write_vm("pop pointer 1")
+       write_vm("push that 0")
         return
       end
       return
@@ -236,47 +228,83 @@ class CompileEngine
       fast_forward
     elsif curr_type_identifier == "("
       method = 1
-      @vm_writer.puts("push pointer 0")
+     write_vm("push pointer 0")
       curr_func_name = @class_name + "." + curr_var_name
     else
       raise "no such subroutine"
     end
     c = compile_expression_list
-    @vm_writer.write_call(curr_func_name, c + method)
+    @vm_writer.write_call(command_name:curr_func_name, argument_count: c + method)
   end
 
   def compile_expression_list(sub_call: true)
-    fast_forward #print "("
-    write_labels(statement: "expressionList") if sub_call
+    fast_forward if sub_call
+    if command == ")"
+      fast_forward
+      return 0
+    end
+    i = 1
+
     if sub_call
-      (command == "," ? fast_forward : compile_expression) until command == ")"
+      while command != ")"
+        if command == ","
+          fast_forward
+          i += 1
+        else
+          compile_expression
+        end
+      end
+      fast_forward
+      return i
     else
       compile_expression
+      return i
     end
-    write_labels(start: false, statement: "expressionList") if sub_call
-    fast_forward #print ")" 
   end
 
   def compile_expression(expression: true)
-    @previous_command = current_command
-    write_labels(statement: "expression") if expression
-    write_labels(statement: "term")
     case current_expression_segment
-    when "integerConstant", "stringConstant", "keywordConstant"
+    when "integerConstant"
+     write_vm("push constant #{command}")
       fast_forward
-      compile_op
+      compile_op if command.match(Op)
+    when "stringConstant"
+      compile_string
+      fast_forward
+    when "keywordConstant"
+      case command
+      when "false", "null"
+       write_vm("push constant 0")
+      when "this"
+       write_vm("push pointer 0")
+      when "true"
+       write_vm("push constant 0\nnot")
+      end
+      fast_forward
     when "unaryOp"
       compile_op(write_statement: false, unary: true)
     when "identifier"
-      fast_forward
-      command.match(Op) ? compile_op : compile_subroutine_call
+      curr = command
+      @previous_command = curr
+      next_command = fast_forward
+      if %w{. ( [}.include? next_command
+        compile_subroutine_call(end_term: true, from_identifier: true)
+      else
+        if curr == "this"
+         write_vm("push pointer 0")
+        else
+         write_vm("push #{@subroutine_table.kind_of(curr)} #{@subroutine_table.index_of(curr)}")
+        end
+      end
+      compile_op if command.match(Op)
     when "("
-      compile_expression_list(sub_call: false)
-      compile_op
+      fast_forward
+      compile_expression
+      fast_forward
+      compile_op if command.match(Op)
     else
       return nil
     end
-    write_labels(start: false, statement: "expression") if expression
   end
 
   def current_expression_segment
@@ -299,13 +327,72 @@ class CompileEngine
     end
   end
 
-  def compile_op(write_statement: true, unary: false)
-    write_labels(start: false, statement: "term") if write_statement
-    if command.match(Op) || command.match(Unary)
-      fast_forward
-      compile_expression(expression: false)
+  def compile_string
+    str = command[1..-2]
+    if str
+      len = str.length
+     write_vm("push constant #{len}")
+     write_vm("call String.new 1")
+      i = 0
+      while (i < len)
+       write_vm("push constant #{@hash[str[i]]}")
+       write_vm("call String.appendChar 2")
+        i += 1
+      end
+    else
+     write_vm("push constant 0")
+     write_vm("call String.new 1")
     end
-    write_labels(start: false, statement: "term") if unary
+  end
+
+  def write_unary(curr_command)
+    case curr_command
+    when "~"
+     write_vm("not")
+    when "-"
+     write_vm("neg")
+    else
+      raise "no such operator"
+    end
+  end
+
+  def write_op(curr_command)
+    case curr_command
+    when "+"
+     write_vm("add")
+    when "-"
+     write_vm("sub")
+    when "*"
+     write_vm("call Math.multiply 2")
+    when "/"
+     write_vm("call Math.divide 2")
+    when "<"
+     write_vm("lt")
+    when ">"
+     write_vm("gt")
+    when "="
+     write_vm("eq")
+    when "&"
+     write_vm("and")
+    when "|"
+     write_vm("or")
+    else
+      raise "no such operation"
+    end
+  end
+
+
+  def compile_op(write_statement: true, unary: false)
+    current_command = command
+    fast_forward
+    if current_command.match(Op) || current_command.match(Unary)
+      compile_expression(expression: false)
+      if unary
+        write_unary(current_command)
+      else
+        write_op(current_command)
+      end
+    end
   end
 
   # return the current command
@@ -320,14 +407,20 @@ class CompileEngine
 
   # fast_forward is to print the simple "<tag> name </tag>" lines
   def fast_forward(n=1)
+    name = ""
     n.times do
-      @tokenizer.write_command
-      @tokenizer.advance
+      name = @tokenizer.advance
     end
+    return name
   end
 
   #close the file
   def close
     @vm_file.close
   end
+
+  def write_vm(commandline)
+    @vm_writer.write_vm(command_line: commandline)
+  end
+
 end

@@ -6,68 +6,72 @@ class VMWriter
     @VMFile = (File.open(vm_path, "w"))
   end
 
-  def write_push(segment, index)
-    @VMFile.puts("push #{segment} #{index}")
+  def write_push(segment:, index:)
+    write_vm(command_line: "push #{segment} #{index}")
   end
 
-  def write_pop(segment, index)
-    @VMFile.puts("pop #{segment} #{index}")
+  def write_pop(segment:, index:)
+    write_vm(command_line: "pop #{segment} #{index}")
   end
 
   def write_arithmetic(command:, unary: false)
     case command
     when "+"
-      @VMFile.puts("add")
+      write_vm(command_line: "add")
     when "-"
-      unary ? @VMFile.puts("sub") : @VMFile.puts("neg")
+      unary ? write_vm(command_line: "neg") : write_vm(command_line: "sub")
     when "="
-      @VMFile.puts("eq")
+      write_vm(command_line: "eq")
     when ">"
-      @VMFile.puts("gt")
+      write_vm(command_line: "gt")
     when "<"
-      @VMFile.puts("lt")
+      write_vm(command_line: "lt")
     when "&"
-      @VMFile.puts("and")
+      write_vm(command_line: "and")
     when "|"
-      @VMFile.puts("or")
+      write_vm(command_line: "or")
     when "~"
-      @VMFile.puts("not")
+      write_vm(command_line: "not")
     else
       raise "not an arithmetic option"
     end
   end
 
-  def create_label(label, file_name, line_number, position)
-    return "#{label}#{position}.#{file_name}.#{line_number}"
+  def create_label(label:, filename:, line_number: nil, position: nil)
+    return "#{label}#{position}.#{filename}.#{line_number}"
   end
 
-
-  def write_label(label)
-    @VMFile.puts("label #{label}")
+  def write_label(label_name:)
+    write_vm(command_line: "label #{label_name}")
   end
 
-  def write_goto(label)
-    @VMFile.puts("goto #{label}")
+  def write_goto(label_name:)
+    write_vm(command_line: "goto #{label_name}")
   end
 
-  def write_if(label)
-    @VMFile.puts("if-goto #{label}")
+  def write_if(label_name:)
+    write_vm(command_line: "if-goto #{label_name}")
   end
 
-  def write_call(name, n_args)
-    @VMFile.puts("call #{name} #{n_args}")
+  def write_call(command_name:, argument_count:)
+    write_vm(command_line: "call #{command_name} #{argument_count}")
   end
 
-  def write_function(name, n_locals)
-    @VMFile.puts("function #{name} #{n_locals}")
+  def write_function(command_name:, var_count:)
+    write_vm(command_line: "function #{command_name} #{var_count}")
   end
 
-  def write_return(void)
-    @VMFile.puts("return")
-    @VMFile.puts("pop temp 0") if void
+  def write_return(void: false)
+    write_vm(command_line: "return")
+    write_vm(command_line: "pop temp 0") if void
   end
 
   def close
     @VMFile.close
   end
+
+  def write_vm(command_line:, continue: false)
+    @VMFile.write(command_line+ "#{continue ? "" : "\n"}")
+  end
+  
 end

@@ -53,6 +53,7 @@ class Tokenizer
     !has_more_lines? && (@commands && @current_index == @commands.count)
   end
 
+=begin
   def write_command
     advance until !@current_command.empty?
     @xml_file.write("<#{command_type}> ")
@@ -69,6 +70,7 @@ class Tokenizer
     end
     @xml_file.write(" </#{command_type}>\n")
   end
+=end
 
   def command_type
     if @current_command.match(KEYWORDS)
@@ -102,6 +104,7 @@ class Tokenizer
     end
   end
 
+=begin
   def write_token_file
     while !end_of_file?
       advance
@@ -110,13 +113,11 @@ class Tokenizer
     @xml_file.close
     close
   end
+=end
 
   def close
     @input_file.close
   end
-
-
-  private
 
   def split_line
     @commands = split_symbols(@current_line)

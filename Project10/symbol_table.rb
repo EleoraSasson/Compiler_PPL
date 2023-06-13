@@ -3,7 +3,7 @@ class SymbolTable
                 :static, :field, :var, :argument
   CLASS = /^static|field$/
   SUBROUTINE = /^var|argument$/
-  def initialize(parent_node= nil, scope= "class")#()
+  def initialize(parent_node: nil, scope: "class")#()
     @hash = {}
     @static = 0
     @field = 0
@@ -22,33 +22,15 @@ class SymbolTable
     end
   end
 
+  def duplicate(name)
+    define(name: name, type: @type, kind: @kind)
+  end
   def define(name:, type:, kind:)
     @type = type
     @kind = kind
     @hash[name] = {type:type, kind:kind, index: var_count(kind: kind, inc: true),scope: @scope}
   end
 
-  def start_subroutine(method: false, copy_field: false)
-    @hash = {}
-    @type = nil
-    @kind = nil
-    @scope = nil
-    @static = 0
-    @field = 0
-    @var = 0
-    @argument = 0
-    @previous = nil
-
-    if copy_field
-      new_parent = SymbolTable.new
-      @parent_node.hash.each_key do |k|
-        if @parent_node.hash[k][:kind] == "static"
-          new_parent.define(name: k, type: @parent_node.hash[k][:type], kind: "static")
-        end
-      end
-      @parent_node = new_parent
-    end
-  end
 
   def clean_symbols(copy_field=false)
     @hash = {}
