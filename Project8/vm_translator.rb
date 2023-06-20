@@ -5,7 +5,6 @@ class VMTranslator
     path = path[0...-1] if path[-1] == "/"
     @vm_path = File.expand_path(path)
     if path[-3..-1] == ".vm"
-      file_name = path.split("/")[-1][0..-4]
       @asm_path = "#{@vm_path[0..-4]}.asm"
       @single_file = true
     else
@@ -38,10 +37,11 @@ end
 
 puts("Please enter a vm file or a directory containing a vm file")
 path = gets.chomp
+
 if path.start_with?('"') && path.end_with?('"')
   # remove the double quotes from the input string using gsub and a regular expression
 path = path.gsub(/^"|"$/, '')
 end
 # Create a new VMTranslator object and call the compile method
-translator = VMTranslator.new('C:\Users\eleor\OneDrive\Bureau\Year 4\Semester 2\Fundamentals\nand2tetris\nand2tetris\projects\08\ProgramFlow\BasicLoop\BasicLoop.vm')
+translator = VMTranslator.new(path)
 translator.compile

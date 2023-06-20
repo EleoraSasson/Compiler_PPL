@@ -7,6 +7,12 @@ class CodeWriter
     write_bootstrap if !single_file
   end
 
+  def write_bootstrap
+    write_file(string: "@256\nD=A\n@SP\nM=D")
+    #256 is the address of the first free memory location, set D to A(256) and initialize stack pointer to D (256). Then store it with M=D.
+    write_call(init: true)
+  end
+
   def set_file_name(path_to_vm_file)
     @parser = Parser.new(path_to_vm_file)
   end
@@ -104,18 +110,18 @@ class CodeWriter
   #function to write a goto/if goto line in assembly
   def write_goto
     if @parser[0] == "if-goto"
-      pop_stack
+      pop_stack #need pop to get the value in D
       jump = true
     end
-    write_file(string: "@#{@parser[1]}")
-    write_file(string: "#{jump ? "D;JNE" : "0;JMP"}")
+    write_file(string: "@#{@parser[1]}") #write the label name
+    write_file(string: "#{jump ? "D;JNE" : "0;JMP"}") #if jump is true, then jump if the value in D is not equal to 0, else jump unconditionally
   end
 
   #function to write a function declaration line in assembly
   # initialize the functions local variables
   def write_function
     write_file(string: "(#{@parser[1]})")
-    @parser[2].to_i.times do
+    @parser[2].to_i.times do #loop through the number of local variables
       write_file(string: "@0\nD=A")
       push_stack
     end
@@ -123,39 +129,41 @@ class CodeWriter
   end
 
   # function to write a function call line into hack assembly, and initialize the funcs arguments
-  def write_call(init: false)
-    @argument_count = init ? 0 : @parser[2]
+  def write_call(init: false) #init is a boolean value to check if the function is the first function call (bootstrap
+    @argument_count = init ? 0 : @parser[2] #if init is true, then the argument count is 0, else it is the number of arguments
     function_init
-    write_file(string: "@#{init ? "Sys.init" : @parser[1]}\n0;JMP")
-    write_file(string: "(RETURN#{@function_count - 1})", comment: "return address of #{init ? "Sys.init" : @parser[1]}")
+    write_file(string: "@#{init ? "Sys.init" : @parser[1]}\n0;JMP") #if bootstrap, jump to Sys.init, else jump to the function name
+    write_file(string: "(RETURN#{@function_count - 1})", comment: "return address of #{init ? "Sys.init" : @parser[1]}") #write the return address determined by the function call
   end
 
-  #function to write a function return statement line into hack assembly
-  def write_return
-    write_file(string: "@5\nD=A\n@LCL\nA=M-D\nD=M\n@15\nM=D")
-    pop_stack
-    write_file(string: "@ARG\nA=M\nM=D\nD=A+1\n@SP\nM=D")
-    %w[THAT THIS ARG LCL].each do |register|
-      write_file(string: "@LCL\nAM=M-1\nD=M\n@#{register}\nM=D")
-    end
-    write_file(string: "@15\nA=M", comment: "going back to the return address of #{@parser[1]}")
-    write_file(string: "0;JMP")
-  end
 
   #helper function for write call that initializes the functions local variables
   def function_init
-    write_file(string: "@RETURN#{@function_count}\nD=A")
-    push_stack
-    %w[LCL ARG THIS THAT].each do |register|
-      write_file(string: "@#{register}\nD=M")
-      push_stack
+    write_file(string: "@RETURN#{@function_count}\nD=A") #store the return address in D
+    push_stack #push the return address onto the stack
+    %w[LCL ARG THIS THAT].each do |register| #push the values of LCL, ARG, THIS, and THAT onto the stack
+      write_file(string: "@#{register}\nD=M") #store the value of the register in D bc we need to push it onto the stack
+      push_stack #push the value of the register onto the stack
     end
     write_file(string: "@#{@argument_count.to_i + 5}\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n@SP\nD=M\n@LCL\nM=D")
+    #add 5 to leave some space for the return address etc, then assign ARG and LCL to the correct values
     @function_count += 1
   end
 
-  # helper function for write_push and write_pop. It loads/stores the value of the statics variables
+  #function to write a function return statement line
+  def write_return
+    write_file(string: "@5\nD=A\n@LCL\nA=M-D\nD=M\n@15\nM=D")  #store the return address in R15 (R15 is a temporary register)
+    pop_stack
+    write_file(string: "@ARG\nA=M\nM=D\nD=A+1\n@SP\nM=D") #pop the return value into ARG, then set SP to ARG + 1 (to clear the stack)
+    %w[THAT THIS ARG LCL].each do |register|
+      write_file(string: "@LCL\nAM=M-1\nD=M\n@#{register}\nM=D") #pop the values of THAT, THIS, ARG, and LCL off the stack
+    end
+    write_file(string: "@15\nA=M", comment: "going back to the return address of #{@parser[1]}") #go back to the return address of the function
+    write_file(string: "0;JMP")
+  end
 
+
+  # helper function for write_push and write_pop. It loads/stores the value of the statics variables
   def load_static(pop: false)
     write_file(string: "@#{@parser.file_name.upcase}.#{@parser[2]}")
     # If pop is true, store the value in D to the memory location. Otherwise, load the value into D
@@ -163,7 +171,7 @@ class CodeWriter
   end
 
   # Loads a variable from memory into the D register or stores the value in D to a memory location
-  def load_memory(pop: false, save_from_r13: false)
+  def load_memory(save_from_r13: false)
     symbol_hash = Hash["local", "LCL", "argument", "ARG", "this", "THIS", "that", "THAT",
                        "pointer", "THIS", "temp", "5"]
     # Load the memory index into D
@@ -176,14 +184,13 @@ class CodeWriter
     # If save_from_r13 is true, store the value in the D register to the memory location pointed to by R13
     # and then store the value in the R13 register to the memory location pointed to by A.
     # Otherwise, load the value into D
-    write_file(string: "#{save_from_r13 ? "@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D" : "D=M"}")
+    write_file(string: "#{save_from_r13 ? "@14\nM=D\n@13\nD=M\n@14\nA=M\nM=D" : "D=M"}") #r13 is a temporary register
   end
 
 
   def push_stack(constant: nil)
-    # Pushes a constant value onto the stack
     write_file(string: "@#{constant}\nD=A") if constant
-    write_file(string: "@SP\nA=M\nM=D\n@SP\nM=M+1")
+    write_file(string: "@SP\nA=M\nM=D\n@SP\nM=M+1") #push the value onto the stack and increment the stack pointer
   end
 
   def pop_stack(save_to_d: true)
@@ -215,25 +222,21 @@ class CodeWriter
     push_stack
   end
 
-  def write_bootstrap
-    write_file(string: "@256\nD=A\n@SP\nM=D")
-    write_call(init: true)
-  end
-
-  def close
-    @asm_file.close
-  end
-
-  #  write_file(string: "@TRUE_JUMP", set_file_name: true, label: "@")
+  # Writes a line to the file
   def write_file(string:"", set_line_number: false, comment: "", set_file_name: false, label: "")
     line_number = set_line_number ? @parser.line_number : ""
     if !set_file_name
-      @asm_file.write("#{string}#{line_number}#{comment == "" ? "\n" : "//#{comment}\n"}")
-    elsif label == "@"
+      @asm_file.write("#{string}#{line_number}#{comment == "" ? "\n" : "//#{comment}\n"}") #write the line to the file
+    elsif label == "@" #write a label
       @asm_file.write("#{string}.#{@parser.file_name.upcase}.#{@parser.line_number}#{comment == "" ? "\n" : "//#{comment}\n"}")
-    else
+    else #write a jump label
       @asm_file.write("#{string}.#{@parser.file_name.upcase}.#{@parser.line_number}#{comment == "" ? ")\n" : ")//#{comment}\n"}")
     end
+  end
+
+  #close the file
+  def close
+    @asm_file.close
   end
 end
 

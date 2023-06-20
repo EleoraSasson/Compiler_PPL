@@ -53,41 +53,7 @@ class Tokenizer
     !has_more_lines? && (@commands && @current_index == @commands.count)
   end
 
-=begin
-  def write_command
-    advance until !@current_command.empty?
-    @xml_file.write("<#{command_type}> ")
-    if @current_command.include? ('"')
-      @xml_file.write(@current_command[1..-2])
-    elsif @current_command == "<"
-      @xml_file.write("&lt;")
-    elsif @current_command == ">"
-      @xml_file.write("&gt;")
-    elsif @current_command == "&"
-      @xml_file.write("&amp;")
-    else
-      @xml_file.write(@current_command)
-    end
-    @xml_file.write(" </#{command_type}>\n")
-  end
-=end
-
-  def command_type
-    if @current_command.match(KEYWORDS)
-      return("keyword")
-    elsif @current_command.match(SYMBOLS)
-      return("symbol")
-    elsif @current_command.match(INTS)
-      return("integerConstant")
-    elsif @current_command.match(STRINGS)
-      return("stringConstant")
-    else
-      return("identifier")
-    end
-  end
-
-
-  def command_segment
+  def command_segment # return the segment of the current command
     case @current_command
     when "class"
       return "class"
@@ -104,26 +70,11 @@ class Tokenizer
     end
   end
 
-=begin
-  def write_token_file
-    while !end_of_file?
-      advance
-      write_command
-    end
-    @xml_file.close
-    close
-  end
-=end
-
-  def close
-    @input_file.close
-  end
-
-  def split_line
+  def split_line # split the current line into an array of tokens
     @commands = split_symbols(@current_line)
   end
 
-  def split_symbols(string)
+  def split_symbols(string) # split the string into an array of tokens
     i = 0
     result = []
     strings = string.split(/(")/)
@@ -141,4 +92,9 @@ class Tokenizer
     end
     return result.flatten.select {|s| !s.empty?}
   end
+
+  def close
+    @input_file.close
+  end
+
 end
